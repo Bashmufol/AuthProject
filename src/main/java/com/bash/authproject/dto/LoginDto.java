@@ -1,4 +1,3 @@
 package com.bash.authproject.dto;
 
-public class LoginDto {
-}
+public record LoginDto (String username, String password) {}

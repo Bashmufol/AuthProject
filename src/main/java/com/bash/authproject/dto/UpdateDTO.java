@@ -1,4 +1,4 @@
 package com.bash.authproject.dto;
 
-public class UpdateDTO {
+public record UpdateDTO (String firstName, String lastName, String email) {
 }

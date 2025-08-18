@@ -2,6 +2,7 @@ package com.bash.authproject.controller;
 
 import com.bash.authproject.dto.*;
 import com.bash.authproject.model.User;
+import com.bash.authproject.service.JwtService;
 import com.bash.authproject.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
