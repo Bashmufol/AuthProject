@@ -1,4 +1,4 @@
 package com.bash.authproject.dto;
 
-public class LoginDTO {
+public class LoginDto {
 }
