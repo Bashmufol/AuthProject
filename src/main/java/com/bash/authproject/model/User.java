@@ -3,6 +3,8 @@ package com.bash.authproject.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,4 +25,8 @@ public class User {
     @Column(nullable = false)
     private String password;
     private Boolean isActive;
+    @Column(name = "reset_password_token")
+    private String resetPasswordToken;
+    @Column(name = "reset_token_expiry_date")
+    private LocalDateTime resetTokenExpiryDate;
 }

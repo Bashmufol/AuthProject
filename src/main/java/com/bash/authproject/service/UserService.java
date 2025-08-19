@@ -1,5 +1,6 @@
 package com.bash.authproject.service;
 
+import com.bash.authproject.dto.ForgotPasswordRequestDto;
 import com.bash.authproject.dto.LoginDto;
 import com.bash.authproject.dto.RegisterDto;
 import com.bash.authproject.dto.UpdateUserDto;
@@ -13,6 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -72,6 +76,21 @@ public class UserService {
 
     public User findUserByUsername(String username){
         return userRepository.findByUsername(username).orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found"));
+    }
+
+    public void initiatePasswordReset(ForgotPasswordRequestDto request) {
+        User user = userRepository.findByEmail(request.email()) // You need findByEmail in UserRepository
+                .orElseThrow(() -> new EntityNotFoundException("User with email " + request.email() + " not found"));
+
+        String token = UUID.randomUUID().toString(); // Generate a unique token
+        // Set token to expire in 1 hour (adjust as needed)
+        LocalDateTime expiryDate = LocalDateTime.now().plusHours(1);
+
+        user.setResetPasswordToken(token);
+        user.setResetTokenExpiryDate(expiryDate);
+        userRepository.save(user);
+        System.out.println("Password reset token for " + user.getEmail() + ": " + token);
+        // Example: emailService.sendPasswordResetEmail(user.getEmail(), token);
     }
 
 
