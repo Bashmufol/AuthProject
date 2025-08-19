@@ -43,7 +43,6 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequestDto request) {
         userService.initiatePasswordReset(request);
-        // Important: Always return a generic success message to prevent user enumeration
         return ResponseEntity.ok("a password reset link has been sent to: " + request.email());
     }
 
