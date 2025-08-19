@@ -38,4 +38,19 @@ public class AuthController {
         userService.deactivateCurrentUserProfile();
         return ResponseEntity.ok("Your account is Deactivated");
     }
+
+    // New endpoint to initiate forgot password process
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequestDto request) {
+        userService.initiatePasswordReset(request);
+        // Important: Always return a generic success message to prevent user enumeration
+        return ResponseEntity.ok("a password reset link has been sent to: " + request.email());
+    }
+
+    // New endpoint to reset password with token
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordDto request) {
+        userService.resetPassword(request);
+        return ResponseEntity.ok("Password has been successfully reset.");
+    }
 }

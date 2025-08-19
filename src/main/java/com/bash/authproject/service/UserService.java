@@ -1,9 +1,6 @@
 package com.bash.authproject.service;
 
-import com.bash.authproject.dto.ForgotPasswordRequestDto;
-import com.bash.authproject.dto.LoginDto;
-import com.bash.authproject.dto.RegisterDto;
-import com.bash.authproject.dto.UpdateUserDto;
+import com.bash.authproject.dto.*;
 import com.bash.authproject.model.User;
 import com.bash.authproject.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -93,6 +90,20 @@ public class UserService {
         // Example: emailService.sendPasswordResetEmail(user.getEmail(), token);
     }
 
+    public void resetPassword(ResetPasswordDto request) {
+        User user = userRepository.findByResetPasswordToken(request.token()) // You need findByResetPasswordToken in UserRepository
+                .orElseThrow(() -> new EntityNotFoundException("Invalid or expired password reset token."));
+
+        // Check if the token has expired
+        if (user.getResetTokenExpiryDate() == null || user.getResetTokenExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Password reset token has expired.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setResetPasswordToken(null);        // Clear token after use
+        user.setResetTokenExpiryDate(null); // Clear expiry date
+        userRepository.save(user);
+    }
 
 
 }
