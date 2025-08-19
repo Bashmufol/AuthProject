@@ -16,14 +16,14 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    @Value("${jwt.secret.key}")
+    @Value("${jwt.secret.key}") // Injects the secret key from application properties
     private String jwtSecretKey;
 
-    @Value("${jwt.access.token.expiration.time}") // For refresh token expiration
+    @Value("${jwt.access.token.expiration.time}") // Injects access token expiration time
     private long jwtAccessTokenExpirationTime;
 
 
-    @Value("${jwt.refresh.token.expiration.time}") // For refresh token expiration
+    @Value("${jwt.refresh.token.expiration.time}") // Injects refresh token expiration time
     private long jwtRefreshTokenExpirationTime;
 
     public String extractUsername(String token) {
@@ -35,10 +35,12 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    // Generates an access token with the configured expiration time
     public String generateAccessToken(UserPrincipal userPrincipal) {
         return generateToken(new HashMap<>(), userPrincipal, jwtAccessTokenExpirationTime);
     }
 
+    // Generates an refresh token with the configured expiration time
     public String generateRefreshToken(UserPrincipal userPrincipal) {
         return generateToken(new HashMap<>(), userPrincipal, jwtRefreshTokenExpirationTime);
     }

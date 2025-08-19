@@ -26,13 +26,13 @@ public class AuthController {
         AuthResponseDto authResponse = userService.loginUser(request);
         return ResponseEntity.ok(authResponse);
     }
-
+    // Endpoint to update profile
     @PutMapping("/update-profile")
     public ResponseEntity<User> updateProfile(@RequestBody UpdateUserDto request){
         User updatedUser = userService.updateCurrentUserProfile(request);
         return ResponseEntity.ok(updatedUser);
     }
-
+    // Endpoint to deactivate profile
     @PostMapping("/deactivate-profile")
     public ResponseEntity<String> deactivateProfile(){
         userService.deactivateCurrentUserProfile();

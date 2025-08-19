@@ -16,7 +16,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository repo;
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        // Fetches a user from the database by their username
         Optional<User> user = repo.findByUsername(username);
+
+        // If the user is found, wrap it in a UserPrincipal and return
         if(user.isPresent()) {
             return new UserPrincipal(user.get());
         } else {

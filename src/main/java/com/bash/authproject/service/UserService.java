@@ -69,6 +69,8 @@ public class UserService {
     }
 
 
+//    Retrieves the username of the currently authenticated user from the SecurityContext
+//    and returns the username
     private String getCurrentAuthenticatedUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -83,16 +85,12 @@ public class UserService {
     }
 
     public void initiatePasswordReset(ForgotPasswordRequestDto request) {
-        User user = userRepository.findByEmail(request.email()) // You need findByEmail in UserRepository
+        User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new EntityNotFoundException("User with email " + request.email() + " not found"));
 
-//        if (user == null) {
-//            System.out.println("Password reset requested for non-existent email: " + request.email());
-//            return; // Exit silently if user not found, but client still gets success message.
-//        }
-
         String token = UUID.randomUUID().toString(); // Generate a unique token
-        // Set token to expire in 1 hour (adjust as needed)
+
+        // Set token to expire in 10 minutes
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(10);
 
         user.setResetPasswordToken(token);
@@ -100,19 +98,17 @@ public class UserService {
         userRepository.save(user);
 
         try {
-            // NEW: Call the EmailService to send the email
+            // Call the EmailService to send the email
             emailService.sendPasswordResetEmail(user.getEmail(), token, user.getUsername());
         } catch (MailException e) {
-            // Log the error for internal monitoring, but don't expose sensitive details to the user.
+            // Log the error for internal monitoring
             System.err.println("Failed to send password reset email to " + user.getEmail() + ": " + e.getMessage());
-            // You might want to throw a custom, user-friendly exception here, or rethrow as a RuntimeException
-            // if this failure should indicate a problem to the client.
             throw new RuntimeException("Failed to send password reset email. Please try again later.", e);
         }
     }
 
     public void resetPassword(ResetPasswordDto request) {
-        User user = userRepository.findByResetPasswordToken(request.token()) // You need findByResetPasswordToken in UserRepository
+        User user = userRepository.findByResetPasswordToken(request.token())
                 .orElseThrow(() -> new EntityNotFoundException("Invalid or expired password reset token."));
 
         // Check if the token has expired

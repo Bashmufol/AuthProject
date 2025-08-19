@@ -35,7 +35,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter before Spring Security's default username/password filter
                 .build();
 
     }
@@ -43,18 +43,20 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService);
+        provider.setUserDetailsService(customUserDetailsService);  // Set custom user details service for fetching user data
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager() {
+        // Manually configure ProviderManager with our custom AuthenticationProvider.
         return new ProviderManager(Collections.singletonList(authenticationProvider()));
     }
 
     @Bean
     PasswordEncoder passwordEncoder() {
+        // Defines the password encoder for hashing, salting and verifying passwords
         return new BCryptPasswordEncoder();
     }
 
