@@ -11,7 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -44,8 +43,8 @@ public class AuthController {
     @PutMapping("/update-profile")
     public ResponseEntity<User> updateProfile(@RequestBody UpdateUserDto request){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User currentUser = userService.findUserByUsername(userDetails.getUsername());
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        User currentUser = userService.findUserByUsername(userPrincipal.getUsername());
         User updatedUser = userService.updateUser(currentUser.getUsername(), request);
         return ResponseEntity.ok(updatedUser);
     }
@@ -53,8 +52,8 @@ public class AuthController {
     @PostMapping("/deactivate-profile")
     public ResponseEntity<String> deactivateProfile(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userdetails = (UserDetails) authentication.getPrincipal();
-        userService.deactivateUser(userdetails.getUsername());
+        UserPrincipal userPrincipal=  (UserPrincipal) authentication.getPrincipal();
+        userService.deactivateUser(userPrincipal.getUsername());
         return ResponseEntity.ok("Your account is Deactivated");
     }
 }
