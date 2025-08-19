@@ -36,13 +36,18 @@ public class UserService {
         userRepository.save(newUser);
     }
 
-    public String loginUser(LoginDto request) {
+    public AuthResponseDto loginUser(LoginDto request) {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
         User user = findUserByUsername(request.username());
         UserPrincipal userPrincipal = new UserPrincipal(user);
-        return jwtService.generateToken(userPrincipal);
+        String AccessToken = jwtService.generateAccessToken(userPrincipal);
+        String refreshToken = jwtService.generateRefreshToken(userPrincipal);
+        user.setRefreshToken(refreshToken);
+        user.setRefreshTokenExpiryDate(LocalDateTime.now().plusDays(2));
+        userRepository.save(user);
+        return new AuthResponseDto(AccessToken, refreshToken);
     }
 
     public User updateCurrentUserProfile(UpdateUserDto request){
@@ -119,6 +124,35 @@ public class UserService {
         user.setResetPasswordToken(null);        // Clear token after use
         user.setResetTokenExpiryDate(null); // Clear expiry date
         userRepository.save(user);
+    }
+
+    public AuthResponseDto refreshAccessToken(RefreshTokenRequestDto request) {
+        String refreshToken = request.refreshToken();
+        String username = jwtService.extractUsername(refreshToken);
+
+        if(username == null) throw new IllegalArgumentException("Invalid refresh token");
+
+        User user = userRepository.findByUsername(username).orElseThrow(
+                () -> new EntityNotFoundException("User " + username + " not found")
+        );
+
+        UserPrincipal userPrincipal = new UserPrincipal(user);
+
+        if (jwtService.isTokenValid(refreshToken, userPrincipal) &&
+                user.getRefreshToken() != null && user.getRefreshToken().equals(refreshToken) &&
+                user.getRefreshTokenExpiryDate() != null && user.getRefreshTokenExpiryDate().isAfter(LocalDateTime.now())) {
+
+            String newAccessToken = jwtService.generateAccessToken(userPrincipal); // Generate new access token
+
+            return new AuthResponseDto(newAccessToken, refreshToken); // Return new access token and original refresh token
+        } else {
+            // Invalidate the old refresh token if it's compromised or invalid
+             user.setRefreshToken(null);
+             user.setRefreshTokenExpiryDate(null);
+             userRepository.save(user);
+            throw new IllegalArgumentException("Invalid or expired refresh token. Please log in again.");
+        }
+
     }
 
 }

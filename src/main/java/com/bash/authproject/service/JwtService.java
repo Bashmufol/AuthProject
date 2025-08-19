@@ -6,7 +6,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -20,8 +19,12 @@ public class JwtService {
     @Value("${jwt.secret.key}")
     private String jwtSecretKey;
 
-    @Value("${jwt.expiration.time}")
-    private long jwtExpirationTime;
+    @Value("${jwt.access.token.expiration.time}") // For refresh token expiration
+    private long jwtAccessTokenExpirationTime;
+
+
+    @Value("${jwt.refresh.token.expiration.time}") // For refresh token expiration
+    private long jwtRefreshTokenExpirationTime;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -32,17 +35,21 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserPrincipal userPrincipal) {
-        return generateToken(new HashMap<>(), userPrincipal);
+    public String generateAccessToken(UserPrincipal userPrincipal) {
+        return generateToken(new HashMap<>(), userPrincipal, jwtAccessTokenExpirationTime);
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserPrincipal userPrincipal) {
+    public String generateRefreshToken(UserPrincipal userPrincipal) {
+        return generateToken(new HashMap<>(), userPrincipal, jwtRefreshTokenExpirationTime);
+    }
+
+    public String generateToken(Map<String, Object> extraClaims, UserPrincipal userPrincipal, long expirationTime) {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
                 .setSubject(userPrincipal.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationTime))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

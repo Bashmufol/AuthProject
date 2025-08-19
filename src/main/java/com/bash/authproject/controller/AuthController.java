@@ -22,9 +22,9 @@ public class AuthController {
 
 //    Handles user login
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDto request){
-        String jwtToken = userService.loginUser(request);
-        return ResponseEntity.ok(jwtToken);
+    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginDto request){
+        AuthResponseDto authResponse = userService.loginUser(request);
+        return ResponseEntity.ok(authResponse);
     }
 
     @PutMapping("/update-profile")
@@ -39,7 +39,7 @@ public class AuthController {
         return ResponseEntity.ok("Your account is Deactivated");
     }
 
-    // New endpoint to initiate forgot password process
+    // Endpoint to initiate forgot password process
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequestDto request) {
         userService.initiatePasswordReset(request);
@@ -47,10 +47,17 @@ public class AuthController {
         return ResponseEntity.ok("a password reset link has been sent to: " + request.email());
     }
 
-    // New endpoint to reset password with token
+    // Endpoint to reset password with token
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordDto request) {
         userService.resetPassword(request);
         return ResponseEntity.ok("Password has been successfully reset.");
+    }
+
+    // Endpoint for refreshing access token using refresh token
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponseDto> refreshToken(@RequestBody RefreshTokenRequestDto request){
+        AuthResponseDto authResponse = userService.refreshAccessToken(request);
+        return ResponseEntity.ok(authResponse);
     }
 }
