@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+
+    ports:
+      - "8081:8090"
+
+    depends_on:
+      - db
+
+    env_file:
+      - ./.env
+
+    networks:
+      - my-network
+
+
+  db:
+    image: mysql:8.0
+
+    env_file:
+      - ./.env
+
+    ports:
+      - "3300:3306"
+
+    networks:
+      - my-network
+
+    volumes:
+      - db-data:/var/lib/mysql
+
+volumes:
+  db-data:
+
+networks:
+  my-network:
+    driver: bridge
