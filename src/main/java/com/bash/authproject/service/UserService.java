@@ -1,6 +1,7 @@
 package com.bash.authproject.service;
 
 import com.bash.authproject.dto.*;
+import com.bash.authproject.exceptions.UserNotFoundException;
 import com.bash.authproject.model.ResponseModel;
 import com.bash.authproject.model.User;
 import com.bash.authproject.repository.UserRepository;
@@ -55,20 +56,20 @@ public class UserService {
         return new ResponseModel<>(HttpStatus.OK, "Login Successful", authresponse);
     }
 
-    public User updateCurrentUserProfile(UpdateUserDto request){
+    public ResponseModel<UserDto> updateCurrentUserProfile(UpdateUserDto request){
         String username = getCurrentAuthenticatedUsername();
         User user = userRepository.findByUsername(username).
-                orElseThrow(() -> new EntityNotFoundException("User " + username + " not found"));
+                orElseThrow(() -> new UserNotFoundException("User " + username + " not found"));
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setEmail(request.email());
-        return userRepository.save(user);
+        return new ResponseModel<>(HttpStatus.OK, "Profile updated successfully", new UserDto(user));
     }
 
     public void deactivateCurrentUserProfile(){
         String username = getCurrentAuthenticatedUsername();
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("User " + username + " not found"));
+                .orElseThrow(() -> new UserNotFoundException("User " + username + " not found"));
         user.setIsActive(false);
         userRepository.save(user);
     }
@@ -86,12 +87,12 @@ public class UserService {
     }
 
     public User findUserByUsername(String username){
-        return userRepository.findByUsername(username).orElseThrow(() -> new EntityNotFoundException("User with username " + username + " not found"));
+        return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User with username " + username + " not found"));
     }
 
     public void initiatePasswordReset(ForgotPasswordRequestDto request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new EntityNotFoundException("User with email " + request.email() + " not found"));
+                .orElseThrow(() -> new UserNotFoundException("User with email " + request.email() + " not found"));
 
         String token = UUID.randomUUID().toString(); // Generate a unique token
 

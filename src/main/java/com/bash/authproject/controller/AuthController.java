@@ -1,6 +1,7 @@
 package com.bash.authproject.controller;
 
 import com.bash.authproject.dto.*;
+import com.bash.authproject.model.ResponseModel;
 import com.bash.authproject.model.User;
 import com.bash.authproject.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -16,24 +17,20 @@ public class AuthController {
 
     //    Handles user registration
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterDto request) {
-        userService.registerUser(request);
-        return ResponseEntity.ok("Registration successful");
+    public ResponseModel<UserDto> register(@RequestBody RegisterDto request) {
+        return userService.registerUser(request);
 //        TODO: return basic user detail with no password or any other sensitive data
     }
 
 //    Handles user login
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginDto request){
-        AuthResponseDto authResponse = userService.loginUser(request);
-        return ResponseEntity.ok(authResponse);
-//        TODO: also handle exceptions for not found and proper response code -> use a response model
+    public ResponseModel<AuthResponseDto> login(@RequestBody LoginDto request){
+        return userService.loginUser(request);
     }
     // Endpoint to update profile
     @PutMapping("/update-profile")
-    public ResponseEntity<User> updateProfile(@RequestBody UpdateUserDto request){
-        User updatedUser = userService.updateCurrentUserProfile(request);
-        return ResponseEntity.ok(updatedUser);
+    public ResponseModel<UserDto> updateProfile(@RequestBody UpdateUserDto request){
+        return userService.updateCurrentUserProfile(request);
     }
     // Endpoint to deactivate profile
     @PostMapping("/deactivate-profile")
