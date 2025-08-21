@@ -29,8 +29,4 @@ public class User {
     private String resetPasswordToken;
     @Column(name = "reset_token_expiry_date")
     private LocalDateTime resetTokenExpiryDate;
-    @Column(name = "refresh_token")
-    private String refreshToken;
-    @Column(name = "refresh_token_expiry_date")
-    private LocalDateTime refreshTokenExpiryDate;
 }
