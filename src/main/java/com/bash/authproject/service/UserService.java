@@ -44,6 +44,7 @@ public class UserService {
         UserPrincipal userPrincipal = new UserPrincipal(user);
         String AccessToken = jwtService.generateAccessToken(userPrincipal);
         String refreshToken = jwtService.generateRefreshToken(userPrincipal);
+        // TODO: have another table to handle refresh token and expiry
         user.setRefreshToken(refreshToken);
         user.setRefreshTokenExpiryDate(LocalDateTime.now().plusDays(2));
         userRepository.save(user);
@@ -93,6 +94,7 @@ public class UserService {
         // Set token to expire in 10 minutes
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(10);
 
+        //TODO: another table
         user.setResetPasswordToken(token);
         user.setResetTokenExpiryDate(expiryDate);
         userRepository.save(user);
@@ -108,6 +110,7 @@ public class UserService {
     }
 
     public void resetPassword(ResetPasswordDto request) {
+        //TODO: use email to check user details not token
         User user = userRepository.findByResetPasswordToken(request.token())
                 .orElseThrow(() -> new EntityNotFoundException("Invalid or expired password reset token."));
 

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final UserService userService;
 
-
     //    Handles user registration
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto request) {
