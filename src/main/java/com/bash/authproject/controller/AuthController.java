@@ -12,11 +12,14 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final UserService userService;
 
+    //    TODO: handle global exception
+
     //    Handles user registration
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto request) {
         userService.registerUser(request);
         return ResponseEntity.ok("Registration successful");
+//        TODO: return basic user detail with no password or any other sensitive data
     }
 
 //    Handles user login
@@ -24,6 +27,7 @@ public class AuthController {
     public ResponseEntity<AuthResponseDto> login(@RequestBody LoginDto request){
         AuthResponseDto authResponse = userService.loginUser(request);
         return ResponseEntity.ok(authResponse);
+//        TODO: also handle exceptions for not found and proper response code -> use a response model
     }
     // Endpoint to update profile
     @PutMapping("/update-profile")

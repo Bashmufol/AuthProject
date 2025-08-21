@@ -1,10 +1,12 @@
 package com.bash.authproject.service;
 
 import com.bash.authproject.dto.*;
+import com.bash.authproject.model.ResponseModel;
 import com.bash.authproject.model.User;
 import com.bash.authproject.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +27,7 @@ public class UserService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
-    public void registerUser(RegisterDto request){
+    public ResponseModel<UserDto> registerUser(RegisterDto request){
         User newUser = new User();
         newUser.setFirstName(request.firstName());
         newUser.setLastName(request.lastName());
@@ -34,9 +36,10 @@ public class UserService {
         newUser.setPassword(passwordEncoder.encode(request.password()));
         newUser.setIsActive(true);
         userRepository.save(newUser);
+        return new ResponseModel<>(HttpStatus.CREATED, "Registeration Successful", new UserDto(newUser));
     }
 
-    public AuthResponseDto loginUser(LoginDto request) {
+    public ResponseModel<AuthResponseDto> loginUser(LoginDto request) {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
@@ -48,7 +51,8 @@ public class UserService {
         user.setRefreshToken(refreshToken);
         user.setRefreshTokenExpiryDate(LocalDateTime.now().plusDays(2));
         userRepository.save(user);
-        return new AuthResponseDto(AccessToken, refreshToken);
+        AuthResponseDto authresponse = new AuthResponseDto(AccessToken, refreshToken);
+        return new ResponseModel<>(HttpStatus.OK, "Login Successful", authresponse);
     }
 
     public User updateCurrentUserProfile(UpdateUserDto request){

@@ -1,7 +1,11 @@
 package com.bash.authproject.model;
 
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+@AllArgsConstructor
 public class ResponseModel<T> {
-    private String code;
+    private HttpStatus code;
     private String message;
     private T data;
 }
