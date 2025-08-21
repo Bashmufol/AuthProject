@@ -28,7 +28,9 @@ public class UserService {
     private final JwtService jwtService;
     private final EmailService emailService;
 
+
     public ResponseModel<UserDto> registerUser(RegisterDto request){
+        HttpStatus status = HttpStatus.CREATED;
         User newUser = new User();
         newUser.setFirstName(request.firstName());
         newUser.setLastName(request.lastName());
@@ -37,13 +39,14 @@ public class UserService {
         newUser.setPassword(passwordEncoder.encode(request.password()));
         newUser.setIsActive(true);
         userRepository.save(newUser);
-        return new ResponseModel<>(HttpStatus.CREATED, "Registeration Successful", new UserDto(newUser));
+        return new ResponseModel<>(status.value(), "Registeration Successful", new UserDto(newUser));
     }
 
     public ResponseModel<AuthResponseDto> loginUser(LoginDto request) {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
+        HttpStatus status = HttpStatus.OK;
         User user = findUserByUsername(request.username());
         UserPrincipal userPrincipal = new UserPrincipal(user);
         String AccessToken = jwtService.generateAccessToken(userPrincipal);
@@ -53,17 +56,18 @@ public class UserService {
         user.setRefreshTokenExpiryDate(LocalDateTime.now().plusDays(2));
         userRepository.save(user);
         AuthResponseDto authresponse = new AuthResponseDto(AccessToken, refreshToken);
-        return new ResponseModel<>(HttpStatus.OK, "Login Successful", authresponse);
+        return new ResponseModel<>(status.value(), "Login Successful", authresponse);
     }
 
     public ResponseModel<UserDto> updateCurrentUserProfile(UpdateUserDto request){
+        HttpStatus status = HttpStatus.OK;
         String username = getCurrentAuthenticatedUsername();
         User user = userRepository.findByUsername(username).
                 orElseThrow(() -> new UserNotFoundException("User " + username + " not found"));
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setEmail(request.email());
-        return new ResponseModel<>(HttpStatus.OK, "Profile updated successfully", new UserDto(user));
+        return new ResponseModel<>(status.value(), "Profile updated successfully", new UserDto(user));
     }
 
     public void deactivateCurrentUserProfile(){
@@ -137,7 +141,7 @@ public class UserService {
         if(username == null) throw new IllegalArgumentException("Invalid refresh token");
 
         User user = userRepository.findByUsername(username).orElseThrow(
-                () -> new EntityNotFoundException("User " + username + " not found")
+                () -> new UserNotFoundException("User " + username + " not found")
         );
 
         UserPrincipal userPrincipal = new UserPrincipal(user);
