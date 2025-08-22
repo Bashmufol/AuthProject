@@ -15,7 +15,7 @@ public class EmailService {
     @Value("${spring.mail.username}")   // Injects the sender email address
     private String fromMail;
 
-//    Sends a password reset token to the specified recipient email.
+    //    Sends a password reset token to the specified recipient email.
     public void sendPasswordResetEmail(String toEmail, String token, String username) throws MailException {
 
         // Create a new simple mail message object
