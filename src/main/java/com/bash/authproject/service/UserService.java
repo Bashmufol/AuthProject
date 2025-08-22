@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -46,7 +48,7 @@ public class UserService {
         newUser.setPassword(passwordEncoder.encode(request.password()));
         newUser.setIsActive(true);
         userRepository.save(newUser);
-        return new ResponseModel<>(status.value(), "Registeration Successful", new UserDto(newUser));
+        return new ResponseModel<>(status.value(), "Registration Successful", new UserDto(newUser));
     }
 
     @Transactional
@@ -59,11 +61,13 @@ public class UserService {
         UserPrincipal userPrincipal = new UserPrincipal(user);
         String AccessToken = jwtService.generateAccessToken(userPrincipal);
         String refreshToken = jwtService.generateRefreshToken(userPrincipal);
+
+        Date expiryDate = jwtService.extractExpiration(refreshToken);
         refreshTokenRepo.deleteByUserId(user.getId());
 
         RefreshToken newRefreshToken = new RefreshToken();
         newRefreshToken.setToken(refreshToken);
-        newRefreshToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+        newRefreshToken.setExpiryDate(expiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()); // Convert java.util.Date to LocalDateTime
         newRefreshToken.setUser(user);
         refreshTokenRepo.save(newRefreshToken);
         AuthResponseDto authresponse = new AuthResponseDto(AccessToken, refreshToken);
@@ -146,6 +150,7 @@ public class UserService {
 
         // Check if the token has expired
         if (passwordResetToken.getExpiryDate() == null || passwordResetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            passwordResetTokenRepo.deleteByUserId(user.getId());
             throw new IllegalStateException("Password reset token has expired.");
         }
 
