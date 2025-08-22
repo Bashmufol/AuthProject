@@ -150,7 +150,7 @@ public class UserService {
 
         // Check if the token has expired
         if (passwordResetToken.getExpiryDate() == null || passwordResetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
-            passwordResetTokenRepo.deleteByUserId(user.getId());
+            passwordResetTokenRepo.delete(passwordResetToken);
             throw new IllegalStateException("Password reset token has expired.");
         }
 
