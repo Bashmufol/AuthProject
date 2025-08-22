@@ -59,7 +59,6 @@ public class UserService {
         UserPrincipal userPrincipal = new UserPrincipal(user);
         String AccessToken = jwtService.generateAccessToken(userPrincipal);
         String refreshToken = jwtService.generateRefreshToken(userPrincipal);
-        // TODO: have another table to handle refresh token and expiry
         refreshTokenRepo.deleteByUserId(user.getId());
 
         RefreshToken newRefreshToken = new RefreshToken();
@@ -84,6 +83,7 @@ public class UserService {
         return new ResponseModel<>(status.value(), "Profile updated successfully", new UserDto(user));
     }
 
+    @Transactional
     public void deactivateCurrentUserProfile(){
         String username = getCurrentAuthenticatedUsername();
         User user = userRepository.findByUsername(username)
@@ -136,6 +136,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void resetPassword(ResetPasswordDto request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("User with email " + request.email() + " not found"));
