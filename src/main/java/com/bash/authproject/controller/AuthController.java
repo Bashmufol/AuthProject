@@ -12,13 +12,10 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final UserService userService;
 
-    //    TODO: handle global exception
-
     //    Handles user registration
     @PostMapping("/register")
     public ResponseModel<UserDto> register(@RequestBody RegisterDto request) {
         return userService.registerUser(request);
-//        TODO: return basic user detail with no password or any other sensitive data
     }
 
 //    Handles user login
@@ -55,7 +52,7 @@ public class AuthController {
     // Endpoint for refreshing access token using refresh token
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponseDto> refreshToken(@RequestBody RefreshTokenRequestDto request){
-        AuthResponseDto authResponse = userService.refreshAccessToken(request);
+        AuthResponseDto authResponse = userService.getNewAccessToken(request);
         return ResponseEntity.ok(authResponse);
     }
 }

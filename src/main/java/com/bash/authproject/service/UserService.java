@@ -71,6 +71,8 @@ public class UserService {
         return new ResponseModel<>(status.value(), "Login Successful", authresponse);
     }
 
+
+    @Transactional
     public ResponseModel<UserDto> updateCurrentUserProfile(UpdateUserDto request){
         HttpStatus status = HttpStatus.OK;
         String username = getCurrentAuthenticatedUsername();
@@ -124,8 +126,6 @@ public class UserService {
         newPasswordResetToken.setUser(user);
         passwordResetTokenRepo.save(newPasswordResetToken);
 
-        //TODO: another table
-
         try {
             // Call the EmailService to send the email
             emailService.sendPasswordResetEmail(user.getEmail(), token, user.getUsername());
@@ -157,47 +157,28 @@ public class UserService {
         passwordResetTokenRepo.delete(passwordResetToken);
     }
 
-    public AuthResponseDto refreshAccessToken(RefreshTokenRequestDto request) {
+    @Transactional
+    public AuthResponseDto getNewAccessToken(RefreshTokenRequestDto request) {
 
-        String refreshToken = request.refreshToken();
+        String providedRefreshToken = request.refreshToken();
 
         //  Find the RefreshToken entity by the provided refresh token
-        RefreshToken existingRefreshtoken = refreshTokenRepo.findByToken(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired Refresh token"));
+        RefreshToken existingRefreshtoken = refreshTokenRepo.findByToken(providedRefreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired Refresh token. Please log in again."));
 
         //  Check if the supplied token has expired
         if (existingRefreshtoken.getExpiryDate() == null || existingRefreshtoken.getExpiryDate().isBefore(LocalDateTime.now())) {
 
             // Invalidate the old refresh token if it's expired
             refreshTokenRepo.delete(existingRefreshtoken);
-            throw new IllegalArgumentException("Invalid or expired Refresh token");
+            throw new IllegalArgumentException("Invalid or expired Refresh token. Please log in again.");
         }
-
+        //     Get the user from the token entity
         User user = existingRefreshtoken.getUser();
-        String username = jwtService.extractUsername(refreshToken);
-
-        if(username == null) throw new IllegalArgumentException("Invalid refresh token");
-
-        User user = userRepository.findByUsername(username).orElseThrow(
-                () -> new UserNotFoundException("User " + username + " not found")
-        );
-
         UserPrincipal userPrincipal = new UserPrincipal(user);
+        String newAccessToken = jwtService.generateAccessToken(userPrincipal);
 
-        if (jwtService.isTokenValid(refreshToken, userPrincipal) &&
-                user.getRefreshToken() != null && user.getRefreshToken().equals(refreshToken) &&
-                user.getRefreshTokenExpiryDate() != null && user.getRefreshTokenExpiryDate().isAfter(LocalDateTime.now())) {
-
-            String newAccessToken = jwtService.generateAccessToken(userPrincipal); // Generate new access token
-
-            return new AuthResponseDto(newAccessToken, refreshToken); // Return new access token and original refresh token
-        } else {
-            // Invalidate the old refresh token if it's compromised or invalid
-             user.setRefreshToken(null);
-             user.setRefreshTokenExpiryDate(null);
-             userRepository.save(user);
-            throw new IllegalArgumentException("Invalid or expired refresh token. Please log in again.");
-        }
+        return new AuthResponseDto(newAccessToken, providedRefreshToken);
 
     }
 
