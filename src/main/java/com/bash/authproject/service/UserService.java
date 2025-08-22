@@ -2,8 +2,12 @@ package com.bash.authproject.service;
 
 import com.bash.authproject.dto.*;
 import com.bash.authproject.exceptions.UserNotFoundException;
+import com.bash.authproject.model.PasswordResetToken;
+import com.bash.authproject.model.RefreshToken;
 import com.bash.authproject.model.ResponseModel;
 import com.bash.authproject.model.User;
+import com.bash.authproject.repository.PasswordResetTokenRepo;
+import com.bash.authproject.repository.RefreshTokenRepo;
 import com.bash.authproject.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -27,6 +32,8 @@ public class UserService {
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
     private final EmailService emailService;
+    private final RefreshTokenRepo refreshTokenRepo;
+    private final PasswordResetTokenRepo passwordResetTokenRepo;
 
 
     public ResponseModel<UserDto> registerUser(RegisterDto request){
@@ -42,6 +49,7 @@ public class UserService {
         return new ResponseModel<>(status.value(), "Registeration Successful", new UserDto(newUser));
     }
 
+    @Transactional
     public ResponseModel<AuthResponseDto> loginUser(LoginDto request) {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
@@ -52,9 +60,13 @@ public class UserService {
         String AccessToken = jwtService.generateAccessToken(userPrincipal);
         String refreshToken = jwtService.generateRefreshToken(userPrincipal);
         // TODO: have another table to handle refresh token and expiry
-        user.setRefreshToken(refreshToken);
-        user.setRefreshTokenExpiryDate(LocalDateTime.now().plusDays(2));
-        userRepository.save(user);
+        refreshTokenRepo.deleteByUserId(user.getId());
+
+        RefreshToken newRefreshToken = new RefreshToken();
+        newRefreshToken.setToken(refreshToken);
+        newRefreshToken.setExpiryDate(LocalDateTime.now().plusDays(7));
+        newRefreshToken.setUser(user);
+        refreshTokenRepo.save(newRefreshToken);
         AuthResponseDto authresponse = new AuthResponseDto(AccessToken, refreshToken);
         return new ResponseModel<>(status.value(), "Login Successful", authresponse);
     }
@@ -94,6 +106,7 @@ public class UserService {
         return userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User with username " + username + " not found"));
     }
 
+    @Transactional
     public void initiatePasswordReset(ForgotPasswordRequestDto request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new UserNotFoundException("User with email " + request.email() + " not found"));
@@ -103,10 +116,15 @@ public class UserService {
         // Set token to expire in 10 minutes
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(10);
 
+        passwordResetTokenRepo.deleteByUserId(user.getId());
+
+        PasswordResetToken newPasswordResetToken = new PasswordResetToken();
+        newPasswordResetToken.setToken(token);
+        newPasswordResetToken.setExpiryDate(expiryDate);
+        newPasswordResetToken.setUser(user);
+        passwordResetTokenRepo.save(newPasswordResetToken);
+
         //TODO: another table
-        user.setResetPasswordToken(token);
-        user.setResetTokenExpiryDate(expiryDate);
-        userRepository.save(user);
 
         try {
             // Call the EmailService to send the email
@@ -119,23 +137,43 @@ public class UserService {
     }
 
     public void resetPassword(ResetPasswordDto request) {
-        //TODO: use email to check user details not token
-        User user = userRepository.findByResetPasswordToken(request.token())
-                .orElseThrow(() -> new EntityNotFoundException("Invalid or expired password reset token."));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new UserNotFoundException("User with email " + request.email() + " not found"));
+
+        PasswordResetToken passwordResetToken = passwordResetTokenRepo.findByToken(request.token())
+                .orElseThrow(() -> new EntityNotFoundException("Invalid or expired password reset token supplied"));
 
         // Check if the token has expired
-        if (user.getResetTokenExpiryDate() == null || user.getResetTokenExpiryDate().isBefore(LocalDateTime.now())) {
+        if (passwordResetToken.getExpiryDate() == null || passwordResetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Password reset token has expired.");
         }
 
+        if(!passwordResetToken.getUser().equals(user)) {
+            throw new IllegalStateException("Token does not match the provided email");
+        }
+
         user.setPassword(passwordEncoder.encode(request.newPassword()));
-        user.setResetPasswordToken(null);        // Clear token after use
-        user.setResetTokenExpiryDate(null); // Clear expiry date
         userRepository.save(user);
+        passwordResetTokenRepo.delete(passwordResetToken);
     }
 
     public AuthResponseDto refreshAccessToken(RefreshTokenRequestDto request) {
+
         String refreshToken = request.refreshToken();
+
+        //  Find the RefreshToken entity by the provided refresh token
+        RefreshToken existingRefreshtoken = refreshTokenRepo.findByToken(refreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired Refresh token"));
+
+        //  Check if the supplied token has expired
+        if (existingRefreshtoken.getExpiryDate() == null || existingRefreshtoken.getExpiryDate().isBefore(LocalDateTime.now())) {
+
+            // Invalidate the old refresh token if it's expired
+            refreshTokenRepo.delete(existingRefreshtoken);
+            throw new IllegalArgumentException("Invalid or expired Refresh token");
+        }
+
+        User user = existingRefreshtoken.getUser();
         String username = jwtService.extractUsername(refreshToken);
 
         if(username == null) throw new IllegalArgumentException("Invalid refresh token");
