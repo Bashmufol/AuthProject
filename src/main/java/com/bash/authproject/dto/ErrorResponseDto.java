@@ -15,4 +15,3 @@ public class ErrorResponseDto {
     private String message;
     private String path;
 }
-fgh
