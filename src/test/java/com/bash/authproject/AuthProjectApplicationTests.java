@@ -10,5 +10,4 @@ class AuthProjectApplicationTests {
 	@Test
 	void itShouldAddNumbers() {
 	}
-hfdj
 }
